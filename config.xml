@@ -1,0 +1,9 @@
+<?xml version='1.0' encoding='utf-8'?>
+<widget id="com.aarna.study" version="1.0.0" xmlns="http://www.w3.org/ns/widgets" xmlns:cdv="http://cordova.apache.org/ns/1.0">
+  <name>Aarna Study</name>
+  <description>Grade 7 practice, assignments, assessments, spelling, and progress.</description>
+  <icon src="resources/icon.png" />
+  <content src="index.html" />
+  <preference name="deployment-target" value="13.0" />
+  <plugin name="cordova-plugin-tts" spec="0.2.3" />
+</widget>

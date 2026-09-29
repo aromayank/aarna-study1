@@ -6,7 +6,19 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "mobile:prepare": "npm run build && node scripts/prepare-cordova.mjs",
+    "ios:setup": "cordova platform add ios@8.1.1",
+    "ios:build": "npm run mobile:prepare && cordova build ios",
+    "ios:open": "npm run ios:build && open platforms/ios/App.xcworkspace"
+  },
+  "cordova": {
+    "platforms": [
+      "ios"
+    ],
+    "plugins": {
+      "cordova-plugin-tts": {}
+    }
   },
   "dependencies": {
     "@fontsource-variable/dm-sans": "^5.3.0",
@@ -20,6 +32,9 @@
     "@types/node": "20.14.12",
     "@types/react": "18.3.3",
     "@types/react-dom": "18.3.0",
+    "cordova": "13.0.0",
+    "cordova-ios": "^8.1.1",
+    "cordova-plugin-tts": "^0.2.3",
     "eslint": "^9.39.5",
     "eslint-config-next": "^16.3.7",
     "typescript": "5.5.4"

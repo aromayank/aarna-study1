@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { ArrowRight, ArrowUpRight, BadgeCheck, BookOpenCheck, BookOpenText, ChartNoAxesColumnIncreasing, CircleHelp, ClipboardList, House, Sparkles, SpellCheck, Volume2, X } from 'lucide-react';
 import { curriculum, type Module, type Question } from '@/lib/curriculum';
 import { ACTIVITY_QUESTION_COUNT, buildActivityQuestionSet, getActivityQuestionCount } from '@/lib/questionBank';
+import { speakSpellingWord } from '@/lib/speech';
 import { getSpellingWords, shuffleSpellingWords, spellingLevels, type SpellingLevel, type SpellingWord } from '@/lib/spelling';
 
 type ActivityMode = 'practice' | 'assignment' | 'assessment' | 'quiz';
@@ -13,12 +14,12 @@ type StudySession = { module: Module; mode: ActivityMode; questions: Question[];
 
 const subjects = ['All subjects', 'ELA', 'Math', 'Science', 'Social Studies'];
 const curriculumGuides = [
-  { label: 'ELA · Grade 7', subject: 'ELA', url: '/curriculum/ELA_-_Grade_7.pdf' },
-  { label: 'ELA · Honors', subject: 'ELA', url: '/curriculum/ELA_Honors_-_Grade_7.pdf' },
-  { label: 'Math · Honors', subject: 'Math', url: '/curriculum/Mathematics_Honors_-_Grade_7.pdf' },
-  { label: 'Science · Grade 7', subject: 'Science', url: '/curriculum/Science---Grade-7.pdf' },
-  { label: 'Social Studies · Grade 7', subject: 'Social Studies', url: '/curriculum/Middle_School_Social_Studies_-_Grade_7.pdf' },
-  { label: 'G.L.O.B.E. · Grades 6–7', subject: 'Interdisciplinary', url: '/curriculum/G.L.O.B.E.---Grades-6-7.pdf' }
+  { label: 'ELA · Grade 7', subject: 'ELA', url: './curriculum/ELA_-_Grade_7.pdf' },
+  { label: 'ELA · Honors', subject: 'ELA', url: './curriculum/ELA_Honors_-_Grade_7.pdf' },
+  { label: 'Math · Honors', subject: 'Math', url: './curriculum/Mathematics_Honors_-_Grade_7.pdf' },
+  { label: 'Science · Grade 7', subject: 'Science', url: './curriculum/Science---Grade-7.pdf' },
+  { label: 'Social Studies · Grade 7', subject: 'Social Studies', url: './curriculum/Middle_School_Social_Studies_-_Grade_7.pdf' },
+  { label: 'G.L.O.B.E. · Grades 6–7', subject: 'Interdisciplinary', url: './curriculum/G.L.O.B.E.---Grades-6-7.pdf' }
 ];
 
 function readProgress(): Progress {
@@ -130,11 +131,8 @@ export default function StudyDashboard() {
   }
 
   function hearWord() {
-    if ('speechSynthesis' in window) {
-      window.speechSynthesis.cancel();
-      const currentWord = spellingRound[spellingIndex]?.word;
-      if (currentWord) window.speechSynthesis.speak(new SpeechSynthesisUtterance(currentWord));
-    }
+    const currentWord = spellingRound[spellingIndex]?.word;
+    if (currentWord) speakSpellingWord(currentWord);
   }
 
   function checkSpelling() {

@@ -61,3 +61,9 @@ TestResult.xml
 nunit-*.xml
 .vercel
 .env*
+
+# Cordova-generated files
+www/
+platforms/
+plugins/
+.cordova/

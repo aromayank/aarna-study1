@@ -6,6 +6,7 @@ import { curriculum, type Module, type Question } from '@/lib/curriculum';
 import { ACTIVITY_QUESTION_COUNT, buildActivityQuestionSet, getActivityQuestionCount } from '@/lib/questionBank';
 import { speakSpellingWord } from '@/lib/speech';
 import { getSpellingWords, shuffleSpellingWords, spellingLevels, type SpellingLevel, type SpellingWord } from '@/lib/spelling';
+import { getVocabularyTerms, vocabularySubjects } from '@/lib/vocabulary';
 
 type ActivityMode = 'practice' | 'assignment' | 'assessment' | 'quiz';
 type Progress = Record<string, { attempts: number; best: number; last: number; totalScore?: number }>;
@@ -54,7 +55,7 @@ function getPeriodLabel(periodId: string) {
 export default function StudyDashboard() {
   const [periodId, setPeriodId] = useState(curriculum[0].id);
   const [subject, setSubject] = useState('All subjects');
-  const [view, setView] = useState<'overview' | 'spelling' | 'parent'>('overview');
+  const [view, setView] = useState<'overview' | 'spelling' | 'vocabulary' | 'parent'>('overview');
   const [progress, setProgress] = useState<Progress>({});
   const [completed, setCompleted] = useState<string[]>([]);
   const [activityRecords, setActivityRecords] = useState<ActivityRecord[]>([]);
@@ -64,6 +65,8 @@ export default function StudyDashboard() {
   const [spellingIndex, setSpellingIndex] = useState(0);
   const [spellingAnswer, setSpellingAnswer] = useState('');
   const [spellingFeedback, setSpellingFeedback] = useState('');
+  const [vocabularySubject, setVocabularySubject] = useState<(typeof vocabularySubjects)[number]>('ELA');
+  const [revealedVocabulary, setRevealedVocabulary] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     const frame = window.requestAnimationFrame(() => {
@@ -190,14 +193,33 @@ export default function StudyDashboard() {
         <nav className="side-nav" aria-label="Main navigation">
           <button className={view === 'overview' ? 'nav-link active' : 'nav-link'} onClick={() => setView('overview')}><House className="nav-icon" size={17} strokeWidth={1.8} />My learning</button>
           <button className={view === 'spelling' ? 'nav-link active' : 'nav-link'} onClick={() => { setView('spelling'); startSpellingRound('easy'); }}><SpellCheck className="nav-icon" size={17} strokeWidth={1.8} />Spelling bee</button>
+          <button className={view === 'vocabulary' ? 'nav-link active' : 'nav-link'} onClick={() => { setView('vocabulary'); setRevealedVocabulary({}); }}><BookOpenText className="nav-icon" size={17} strokeWidth={1.8} />Vocabulary</button>
           <button className={view === 'parent' ? 'nav-link active' : 'nav-link'} onClick={() => setView('parent')}><ChartNoAxesColumnIncreasing className="nav-icon" size={17} strokeWidth={1.8} />Progress report</button>
         </nav>
         <div className="sidebar-bottom"><span className="avatar">A</span><span><strong>Aarna</strong><small>7th grade</small></span><span className="local-badge" title="Saved only on this device">●</span></div>
       </aside>
 
       <section className="main-area">
-        <header className="topbar"><span>Aarna <span className="crumb">/ {view === 'spelling' ? 'Spelling bee' : view === 'parent' ? 'Progress report' : 'My learning'}</span></span><span className="today-label">A little practice goes a long way</span></header>
+        <header className="topbar"><span>Aarna <span className="crumb">/ {view === 'spelling' ? 'Spelling bee' : view === 'vocabulary' ? 'Vocabulary' : view === 'parent' ? 'Progress report' : 'My learning'}</span></span><span className="today-label">A little practice goes a long way</span></header>
         <div className="content-wrap">
+          {view === 'vocabulary' && <section className="vocabulary-view">
+            <p className="eyebrow">WORDS FROM YOUR STUDY PLAN</p>
+            <h1>Curriculum vocabulary</h1>
+            <p className="welcome-copy">Review key terms from the ELA, Math, and Social Studies units for each marking period.</p>
+            <div className="period-tabs" role="tablist" aria-label="Vocabulary marking period">{curriculum.map((item, index) => <button key={item.id} role="tab" aria-selected={periodId === item.id} className={periodId === item.id ? 'period-tab selected' : 'period-tab'} onClick={() => { setPeriodId(item.id); setRevealedVocabulary({}); }}><span>MP {index + 1}</span><small>{['Sep – Nov', 'Nov – Jan', 'Jan – Mar', 'Mar – Jun'][index]}</small></button>)}</div>
+            <div className="vocabulary-subjects" role="tablist" aria-label="Vocabulary subject">{vocabularySubjects.map((name) => <button key={name} role="tab" aria-selected={vocabularySubject === name} className={vocabularySubject === name ? 'vocabulary-subject selected' : 'vocabulary-subject'} onClick={() => { setVocabularySubject(name); setRevealedVocabulary({}); }}>{name}</button>)}</div>
+            <div className="vocabulary-heading"><div><p className="eyebrow">{period.name.toUpperCase()} · {vocabularySubject.toUpperCase()}</p><h2>{period.modules.find((module) => module.domain === vocabularySubject)?.title}</h2><p>Tap a term to reveal its meaning in this unit.</p></div><span className="vocabulary-count">{getVocabularyTerms(periodId, vocabularySubject).length} TERMS</span></div>
+            <div className="vocabulary-grid">{getVocabularyTerms(periodId, vocabularySubject).map((item, index) => {
+              const key = `${periodId}-${vocabularySubject}-${item.term}`;
+              const revealed = Boolean(revealedVocabulary[key]);
+              return <button key={item.term} className={revealed ? 'vocabulary-card revealed' : 'vocabulary-card'} aria-expanded={revealed} onClick={() => setRevealedVocabulary((current) => ({ ...current, [key]: !current[key] }))}>
+                <span className="vocabulary-number">{String(index + 1).padStart(2, '0')}</span>
+                <strong>{item.term}</strong>
+                <span className="vocabulary-definition">{revealed ? item.definition : 'Tap to reveal definition'}</span>
+              </button>;
+            })}</div>
+          </section>}
+
           {view === 'overview' && <>
             <div className="welcome-row"><div><p className="eyebrow">YOUR LEARNING, AT YOUR PACE</p><h1>Aarna</h1><p className="welcome-copy">Your Grade 7 study space. Pick up where you left off, or choose something new.</p></div><div className="week-note"><span className="week-sun"><Sparkles size={17} /></span><span><strong>One step at a time</strong><small>Every question is progress.</small></span></div></div>
             <section className="stats-row" aria-label="Your study stats">

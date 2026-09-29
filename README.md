@@ -9,6 +9,7 @@ This project is a responsive seventh-grade study website for a Jonas Salk Middle
 - Four marking-period views across ELA, Math, Science, and Social Studies.
 - Randomized 60-question activity banks per module for practice, assignments, assessments, and quizzes.
 - Marking-period spelling lists at easy, medium, and hard levels, with listen-and-spell rounds.
+- Curriculum-aligned ELA, Math, and Social Studies vocabulary for each marking period, with revealable definitions.
 - A parent progress view with activity totals, scores, assignment submissions, and recent results.
 - Progress is stored in this browser only. It does not sync across devices and is not a secure parent account.
 - Direct access to the supplied ELA, honors ELA, honors Math, Science, Social Studies, and G.L.O.B.E. curriculum guides.

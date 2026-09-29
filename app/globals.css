@@ -162,6 +162,22 @@ h1, .spelling-view h1, .report-view h1 { margin-bottom: 8px; font-family: "Fraun
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; }
 
 .spelling-view, .report-view { max-width: 800px; margin: 0 auto; }
+.vocabulary-view { max-width: 900px; margin: 0 auto; }
+.vocabulary-subjects { display: flex; flex-wrap: wrap; gap: 6px; margin: 20px 0 26px; padding-bottom: 12px; border-bottom: 1px solid var(--line); }
+.vocabulary-subject { min-height: 35px; padding: 0 13px; border: 1px solid var(--line); border-radius: 4px; background: white; color: #65736a; font-size: 11px; font-weight: 650; }
+.vocabulary-subject.selected { border-color: var(--green); background: var(--green); color: white; }
+.vocabulary-heading { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; margin-bottom: 14px; }
+.vocabulary-heading .eyebrow { margin-bottom: 6px; }
+.vocabulary-heading h2 { margin: 0; font-family: "Fraunces Variable", Georgia, serif; font-size: 22px; font-weight: 500; }
+.vocabulary-heading p:last-child { margin: 5px 0 0; color: var(--muted); font-size: 11px; }
+.vocabulary-count { flex: 0 0 auto; color: #86928a; font-size: 9px; font-weight: 750; }
+.vocabulary-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; }
+.vocabulary-card { position: relative; display: grid; min-height: 112px; align-content: start; gap: 10px; padding: 16px 17px; border: 1px solid var(--line); border-radius: 5px; background: white; text-align: left; transition: border-color .15s, background .15s; }
+.vocabulary-card:hover, .vocabulary-card.revealed { border-color: #8baa8c; background: #f7faf4; }
+.vocabulary-number { color: #9ba69d; font-size: 9px; font-weight: 750; }
+.vocabulary-card strong { color: var(--green-dark); font-family: "Fraunces Variable", Georgia, serif; font-size: 17px; font-weight: 550; }
+.vocabulary-definition { color: var(--muted); font-size: 11px; line-height: 1.55; }
+.vocabulary-card:not(.revealed) .vocabulary-definition { color: #9aa49c; font-size: 10px; }
 .spelling-controls { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; margin-top: 24px; }
 .spelling-controls label { display: grid; gap: 7px; color: #64736a; font-size: 10px; font-weight: 700; }
 .spelling-controls select { min-width: 190px; min-height: 38px; padding: 0 10px; border: 1px solid var(--line); border-radius: 4px; background: white; font-size: 11px; }
@@ -247,7 +263,7 @@ h1, .spelling-view h1, .report-view h1 { margin-bottom: 8px; font-family: "Fraun
   .brand { padding: 0 2px; font-size: 16px; }
   .brand-mark { width: 30px; height: 30px; }
   .school-label, .sidebar-bottom { display: none; }
-  .side-nav { grid-template-columns: repeat(3, 1fr); gap: 3px; margin-top: 8px; }
+  .side-nav { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 3px; margin-top: 8px; }
   .nav-link { min-height: 38px; justify-content: center; gap: 6px; padding: 0 4px; font-size: 10px; }
   .nav-icon { width: auto; font-size: 13px; }
   .main-area { margin-left: 0; }
@@ -274,6 +290,8 @@ h1, .spelling-view h1, .report-view h1 { margin-bottom: 8px; font-family: "Fraun
   .report-row { grid-template-columns: 80px 1fr; }
   .report-row > span:last-child { grid-column: 2; text-align: left; }
   .spelling-panel { padding: 24px 17px 19px; }
+  .vocabulary-grid { grid-template-columns: 1fr; }
+  .vocabulary-heading h2 { font-size: 19px; }
   .spelling-controls { align-items: stretch; flex-direction: column; }
   .spelling-controls select { width: 100%; }
   .difficulty-control { grid-template-columns: repeat(3, 1fr); }

@@ -2,8 +2,16 @@
 <widget id="com.aarna.study" version="1.0.0" xmlns="http://www.w3.org/ns/widgets" xmlns:cdv="http://cordova.apache.org/ns/1.0">
   <name>Aarna Study</name>
   <description>Grade 7 practice, assignments, assessments, spelling, and progress.</description>
+  <author email="dev@aarna.study" href="https://aarna.study">Aarna Study</author>
   <icon src="resources/icon.png" />
+  <splash src="resources/splash.png" />
   <content src="index.html" />
   <preference name="deployment-target" value="13.0" />
+  <preference name="AutoHideSplashScreen" value="true" />
+  <preference name="SplashScreenDelay" value="3000" />
+  <preference name="FadeSplashScreen" value="true" />
+  <preference name="FadeSplashScreenDuration" value="500" />
+  <preference name="DisallowOverscroll" value="true" />
+  <preference name="BackupWebStorage" value="local" />
   <plugin name="cordova-plugin-tts" spec="0.2.3" />
 </widget>

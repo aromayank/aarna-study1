@@ -1,7 +1,11 @@
 declare global {
   interface Window {
     TTS?: {
-      speak(options: { text: string; locale?: string; rate?: number }): Promise<void>;
+      speak(
+        options: { text: string; locale?: string; rate?: number },
+        onfulfilled?: () => void,
+        onrejected?: (reason: unknown) => void
+      ): void;
     };
   }
 }
@@ -19,7 +23,11 @@ export function speakSpellingWord(text: string) {
   if (typeof window === 'undefined') return;
 
   if (window.TTS) {
-    void window.TTS.speak({ text, locale: 'en-US', rate: 0.8 }).catch(() => speakInBrowser(text));
+    window.TTS.speak(
+      { text, locale: 'en-US', rate: 0.8 },
+      () => {},
+      () => speakInBrowser(text)
+    );
     return;
   }
 

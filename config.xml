@@ -6,6 +6,7 @@
   <icon src="resources/icon.png" />
   <splash src="resources/splash.png" />
   <content src="index.html" />
+  <hook type="after_prepare" src="scripts/patch-tts-ios.js" />
   <preference name="deployment-target" value="13.0" />
   <preference name="AutoHideSplashScreen" value="true" />
   <preference name="SplashScreenDelay" value="3000" />

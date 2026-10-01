@@ -1,5 +1,5 @@
-const fs = require('node:fs');
-const path = require('node:path');
+const fs = module.require('node:fs');
+const path = module.require('node:path');
 
 module.exports = function patchTtsPlugin(context) {
   const pluginSource = path.join(

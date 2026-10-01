@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { ArrowRight, ArrowUpRight, BadgeCheck, BookOpenCheck, BookOpenText, ChartNoAxesColumnIncreasing, CircleHelp, ClipboardList, House, Sparkles, SpellCheck, Volume2, X } from 'lucide-react';
+import Image from 'next/image';
+import { ArrowRight, ArrowUpRight, BadgeCheck, BookOpenText, ChartNoAxesColumnIncreasing, CircleHelp, ClipboardList, House, Menu, Sparkles, SpellCheck, Volume2, X } from 'lucide-react';
 import { curriculum, type Module, type Question } from '@/lib/curriculum';
 import { ACTIVITY_QUESTION_COUNT, buildActivityQuestionSet, getActivityQuestionCount } from '@/lib/questionBank';
 import { speakSpellingWord } from '@/lib/speech';
@@ -9,6 +10,7 @@ import { getSpellingWords, shuffleSpellingWords, spellingLevels, type SpellingLe
 import { getVocabularyTerms, vocabularySubjects } from '@/lib/vocabulary';
 
 type ActivityMode = 'practice' | 'assignment' | 'assessment' | 'quiz';
+type DashboardView = 'overview' | 'spelling' | 'vocabulary' | 'parent';
 type Progress = Record<string, { attempts: number; best: number; last: number; totalScore?: number }>;
 type ActivityRecord = { id: string; moduleId: string; moduleTitle: string; subject: string; mode: ActivityMode | 'spelling'; score: number; correct: number; total: number; completedAt: string; detail?: string };
 type StudySession = { module: Module; mode: ActivityMode; questions: Question[]; index: number; correct: number; choice: string | null; checked: boolean; finished?: boolean; finalScore?: number };
@@ -55,7 +57,8 @@ function getPeriodLabel(periodId: string) {
 export default function StudyDashboard() {
   const [periodId, setPeriodId] = useState(curriculum[0].id);
   const [subject, setSubject] = useState('All subjects');
-  const [view, setView] = useState<'overview' | 'spelling' | 'vocabulary' | 'parent'>('overview');
+  const [view, setView] = useState<DashboardView>('overview');
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [progress, setProgress] = useState<Progress>({});
   const [completed, setCompleted] = useState<string[]>([]);
   const [activityRecords, setActivityRecords] = useState<ActivityRecord[]>([]);
@@ -77,6 +80,22 @@ export default function StudyDashboard() {
     return () => window.cancelAnimationFrame(frame);
   }, []);
 
+  useEffect(() => {
+    if (!isMobileMenuOpen) return;
+
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setIsMobileMenuOpen(false);
+    };
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    window.addEventListener('keydown', closeOnEscape);
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener('keydown', closeOnEscape);
+    };
+  }, [isMobileMenuOpen]);
+
   const period = curriculum.find((item) => item.id === periodId) ?? curriculum[0];
   const modules = period.modules.filter((module) => subject === 'All subjects' || module.domain === subject || (subject === 'ELA' && module.domain.includes('ELA')));
   const totalAttempts = activityRecords.length || Object.values(progress).reduce((sum, item) => sum + item.attempts, 0);
@@ -97,6 +116,11 @@ export default function StudyDashboard() {
   function startActivity(module: Module, mode: ActivityMode) {
     const questions = buildActivityQuestionSet(module.id, ACTIVITY_QUESTION_COUNT);
     if (questions.length) setSession({ module, mode, questions, index: 0, correct: 0, choice: null, checked: false });
+  }
+
+  function navigateToView(nextView: DashboardView) {
+    setView(nextView);
+    setIsMobileMenuOpen(false);
   }
 
   function finishActivity(correct: number, count: number) {
@@ -187,20 +211,28 @@ export default function StudyDashboard() {
 
   return (
     <main className="app-shell">
-      <aside className="sidebar">
-        <a className="brand" href="#home" onClick={() => setView('overview')}><span className="brand-mark"><BookOpenCheck size={19} strokeWidth={1.8} /></span><span>Aarna<span className="brand-light">Study</span></span></a>
+      <aside className={`sidebar${isMobileMenuOpen ? ' mobile-open' : ''}`}>
+        <a className="brand" href="#home" onClick={() => navigateToView('overview')}><span className="brand-mark"><Image src="/aarna-muse.svg" alt="" width={40} height={40} priority /></span><span>Aarna <span className="brand-light">Study</span></span></a>
         <div className="school-label">JONAS SALK MIDDLE SCHOOL</div>
-        <nav className="side-nav" aria-label="Main navigation">
-          <button className={view === 'overview' ? 'nav-link active' : 'nav-link'} onClick={() => setView('overview')}><House className="nav-icon" size={17} strokeWidth={1.8} />My learning</button>
-          <button className={view === 'spelling' ? 'nav-link active' : 'nav-link'} onClick={() => { setView('spelling'); startSpellingRound('easy'); }}><SpellCheck className="nav-icon" size={17} strokeWidth={1.8} />Spelling bee</button>
-          <button className={view === 'vocabulary' ? 'nav-link active' : 'nav-link'} onClick={() => { setView('vocabulary'); setRevealedVocabulary({}); }}><BookOpenText className="nav-icon" size={17} strokeWidth={1.8} />Vocabulary</button>
-          <button className={view === 'parent' ? 'nav-link active' : 'nav-link'} onClick={() => setView('parent')}><ChartNoAxesColumnIncreasing className="nav-icon" size={17} strokeWidth={1.8} />Progress report</button>
+        <nav className="side-nav" id="study-main-navigation" aria-label="Main navigation">
+          <button className={view === 'overview' ? 'nav-link active' : 'nav-link'} onClick={() => navigateToView('overview')}><House className="nav-icon" size={17} strokeWidth={1.8} />My learning</button>
+          <button className={view === 'spelling' ? 'nav-link active' : 'nav-link'} onClick={() => { navigateToView('spelling'); startSpellingRound('easy'); }}><SpellCheck className="nav-icon" size={17} strokeWidth={1.8} />Spelling bee</button>
+          <button className={view === 'vocabulary' ? 'nav-link active' : 'nav-link'} onClick={() => { navigateToView('vocabulary'); setRevealedVocabulary({}); }}><BookOpenText className="nav-icon" size={17} strokeWidth={1.8} />Vocabulary</button>
+          <button className={view === 'parent' ? 'nav-link active' : 'nav-link'} onClick={() => navigateToView('parent')}><ChartNoAxesColumnIncreasing className="nav-icon" size={17} strokeWidth={1.8} />Progress report</button>
         </nav>
         <div className="sidebar-bottom"><span className="avatar">A</span><span><strong>Aarna</strong><small>7th grade</small></span><span className="local-badge" title="Saved only on this device">●</span></div>
       </aside>
+      {isMobileMenuOpen && <button className="mobile-nav-scrim" type="button" aria-label="Close navigation" onClick={() => setIsMobileMenuOpen(false)} />}
 
       <section className="main-area">
-        <header className="topbar"><span>Aarna <span className="crumb">/ {view === 'spelling' ? 'Spelling bee' : view === 'vocabulary' ? 'Vocabulary' : view === 'parent' ? 'Progress report' : 'My learning'}</span></span><span className="today-label">A little practice goes a long way</span></header>
+        <header className="topbar">
+          <div className="topbar-leading">
+            <button className="mobile-menu-button" type="button" aria-label="Open main menu" aria-controls="study-main-navigation" aria-expanded={isMobileMenuOpen} onClick={() => setIsMobileMenuOpen(true)}><Menu size={20} /></button>
+            <a className="mobile-brand" href="#home" onClick={() => navigateToView('overview')}><Image src="/aarna-muse.svg" alt="" width={38} height={38} priority /><span>Aarna <strong>Study</strong></span></a>
+            <span className="desktop-breadcrumb">Aarna <span className="crumb">/ {view === 'spelling' ? 'Spelling bee' : view === 'vocabulary' ? 'Vocabulary' : view === 'parent' ? 'Progress report' : 'My learning'}</span></span>
+          </div>
+          <span className="today-label">A little practice goes a long way</span>
+        </header>
         <div className="content-wrap">
           {view === 'vocabulary' && <section className="vocabulary-view">
             <p className="eyebrow">WORDS FROM YOUR STUDY PLAN</p>

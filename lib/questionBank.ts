@@ -1,4 +1,5 @@
 import { getAllModules, type Module, type Question } from '@/lib/curriculum';
+import type { TopicDifficulty } from '@/lib/topics';
 
 export const ACTIVITY_QUESTION_COUNT = 60;
 
@@ -23,7 +24,7 @@ function numericQuestion(id: string, prompt: string, answer: number | string, di
   return question(id, prompt, String(answer), distractors.map(String), explanation);
 }
 
-function mathQuestion(module: Module, index: number): Question {
+function mathQuestion(module: Module, index: number, difficulty: TopicDifficulty): Question {
   const period = module.id.slice(0, 3);
   const scenario = Math.floor(index / 5) + 1;
   const skill = index % 5;
@@ -35,6 +36,11 @@ function mathQuestion(module: Module, index: number): Question {
     if (skill === 0) {
       const left = scenario % 2 ? -a : a;
       const right = scenario % 3 ? b : -b;
+      if (difficulty === 'hard') {
+        const third = scenario % 2 ? scenario : -scenario;
+        const answer = left + right + third;
+        return numericQuestion(id, `Evaluate ${left} + (${right}) + (${third}).`, answer, [left + right, answer + third, -answer], 'Add the signed values one at a time and keep the sign of each term.');
+      }
       const answer = left + right;
       return numericQuestion(id, `Evaluate ${left} + (${right}).`, answer, [answer + 1, answer - 2, -answer], 'Add the signed values, keeping track of each number’s sign.');
     }
@@ -45,11 +51,21 @@ function mathQuestion(module: Module, index: number): Question {
     if (skill === 2) {
       const coefficient = (scenario % 5) + 2;
       const constant = scenario + 3;
-        return question(id, `A garden has ${coefficient} rows with (x + ${constant}) seedlings in each row. Which expression gives the total?`, `${coefficient}x + ${coefficient * constant}`, [`${coefficient}x + ${constant}`, `x + ${coefficient * constant}`, `${coefficient + constant}x`], 'Use the distributive property to multiply the coefficient by both terms.');
+      if (difficulty === 'hard') {
+        const extra = scenario % 6 + 1;
+        return question(id, `A garden has ${coefficient} rows with (x + ${constant}) seedlings in each row, then adds ${extra} seedlings. Which expression gives the new total?`, `${coefficient}x + ${coefficient * constant + extra}`, [`${coefficient}x + ${constant + extra}`, `${coefficient}x + ${coefficient * (constant + extra)}`, `${coefficient + extra}x + ${coefficient * constant}`], 'Distribute the number of rows, then add the seedlings added afterward.');
+      }
+      return question(id, `A garden has ${coefficient} rows with (x + ${constant}) seedlings in each row. Which expression gives the total?`, `${coefficient}x + ${coefficient * constant}`, [`${coefficient}x + ${constant}`, `x + ${coefficient * constant}`, `${coefficient + constant}x`], 'Use the distributive property to multiply the coefficient by both terms.');
     }
     if (skill === 3) {
       const coefficient = (scenario % 4) + 2;
       const solution = scenario % 6 + 1;
+      if (difficulty === 'hard') {
+        const offset = scenario % 4 + 2;
+        const subtraction = scenario % 5 + 1;
+        const total = coefficient * (solution + offset) - subtraction;
+        return numericQuestion(id, `Solve ${coefficient}(x + ${offset}) − ${subtraction} = ${total}.`, solution, [solution + 1, solution - 1, total - subtraction], 'Undo subtraction first, divide by the coefficient, then undo the addition inside the parentheses.');
+      }
       const constant = scenario + 2;
       const total = coefficient * solution + constant;
       return numericQuestion(id, `Solve ${coefficient}x + ${constant} = ${total}.`, solution, [solution + 1, solution - 1, total - constant], 'Undo addition first, then divide both sides by the coefficient.');
@@ -78,6 +94,14 @@ function mathQuestion(module: Module, index: number): Question {
     if (skill === 3) {
       const price = scenario * 20;
       const discount = 25;
+      if (difficulty === 'hard') {
+        const originalPrice = scenario * 25;
+        const discountPercent = 20;
+        const taxPercent = 10;
+        const salePrice = originalPrice * (1 - discountPercent / 100);
+        const answer = salePrice * (1 + taxPercent / 100);
+        return numericQuestion(id, `A $${originalPrice} item is discounted by ${discountPercent}%, then taxed ${taxPercent}%. What is the final price?`, answer, [salePrice, originalPrice * (1 + taxPercent / 100), originalPrice - discountPercent - taxPercent], 'Apply the discount to the original price, then calculate tax on the discounted price.');
+      }
       const answer = price - price * discount / 100;
       return numericQuestion(id, `A $${price} item is discounted by ${discount}%. What is the sale price?`, answer, [price * discount / 100, price - discount, price + discount], 'Find 25% of the original price, then subtract the discount.');
     }
@@ -90,11 +114,24 @@ function mathQuestion(module: Module, index: number): Question {
     if (skill === 0) {
       const coefficient = scenario % 5 + 2;
       const solution = scenario % 7 + 1;
+      if (difficulty === 'hard') {
+        const offset = scenario % 4 + 2;
+        const subtraction = scenario % 6 + 1;
+        const total = coefficient * (solution + offset) - subtraction;
+        return numericQuestion(id, `Solve ${coefficient}(x + ${offset}) − ${subtraction} = ${total}.`, solution, [solution + 2, solution - 1, total - coefficient], 'Undo subtraction, divide by the coefficient, and then subtract the offset to isolate x.');
+      }
       const constant = scenario + 4;
       const total = coefficient * solution + constant;
       return numericQuestion(id, `Solve ${coefficient}x + ${constant} = ${total}.`, solution, [solution + 2, solution - 1, total - coefficient], 'Subtract the constant from both sides, then divide by the coefficient.');
     }
     if (skill === 1) {
+      if (difficulty === 'hard') {
+        const coefficient = scenario % 4 + 2;
+        const subtraction = scenario % 5 + 1;
+        const boundary = scenario + 8;
+        const answer = Math.ceil((boundary + subtraction) / coefficient);
+        return question(id, `What is the least integer x that satisfies ${coefficient}x − ${subtraction} ≥ ${boundary}?`, String(answer), [String(answer - 1), String(answer + 1), String(boundary)], 'Add the subtracted amount, divide by the positive coefficient, then choose the least integer that meets the boundary.');
+      }
       const boundary = scenario + 8;
       const value = boundary + (scenario % 4);
       return question(id, `Which value satisfies x ≥ ${boundary}?`, String(value), [String(boundary - 1), String(boundary - 3), String(boundary - 2)], 'A value satisfies x ≥ the boundary when it is equal to or greater than the boundary.');
@@ -102,6 +139,10 @@ function mathQuestion(module: Module, index: number): Question {
     if (skill === 2) {
       const rate = scenario + 3;
       const fixed = scenario + 5;
+      if (difficulty === 'hard') {
+        const visits = scenario % 5 + 3;
+        return numericQuestion(id, `A club charges $${fixed} to join and $${rate} per visit. What is the total cost for ${visits} visits?`, rate * visits + fixed, [rate + fixed, rate * (visits + 1), fixed * visits + rate], 'Multiply the per-visit charge by the number of visits, then add the joining fee.');
+      }
       return question(id, `A club charges $${fixed} to join and $${rate} per visit. Which expression gives the cost for v visits?`, `${rate}v + ${fixed}`, [`${fixed}v + ${rate}`, `${rate + fixed}v`, `${rate} + ${fixed}`], 'Multiply the per-visit cost by v and add the one-time fee.');
     }
     if (skill === 3) {
@@ -114,6 +155,12 @@ function mathQuestion(module: Module, index: number): Question {
   }
 
   if (skill === 0) {
+    if (difficulty === 'hard') {
+      const firstOffset = (scenario % 5 + 1) * 3;
+      const secondOffset = (scenario % 4 + 2) * 3;
+      const value = (120 - firstOffset - secondOffset) / 3;
+      return numericQuestion(id, `A triangle has angles (x + ${firstOffset})°, (2x + ${secondOffset})°, and 60°. What is x?`, value, [value + 1, value - 1, 180 - value], 'Combine the angle expressions, set their sum equal to 180°, and solve for x.');
+    }
     const angleA = 35 + (scenario % 8) * 5;
     const angleB = 60 + (scenario % 7) * 7;
     const first = angleA;
@@ -124,11 +171,17 @@ function mathQuestion(module: Module, index: number): Question {
   if (skill === 1) {
     const length = scenario + 4;
     const width = scenario + 2;
+    if (difficulty === 'hard') {
+      const secondLength = scenario % 5 + 2;
+      const secondWidth = scenario % 4 + 3;
+      return numericQuestion(id, `A floor has two rectangular sections measuring ${length} by ${width} units and ${secondLength} by ${secondWidth} units. What is the combined area?`, length * width + secondLength * secondWidth, [length * width, secondLength * secondWidth, length * width + secondLength + secondWidth], 'Find each rectangle’s area, then add the two areas.');
+    }
     return numericQuestion(id, `What is the area of a ${length}-by-${width} rectangle?`, length * width, [2 * (length + width), length + width, length * width + 2], 'Area is length multiplied by width.');
   }
   if (skill === 2) {
     const favorable = scenario % 4 + 1;
     const total = scenario + 8;
+    if (difficulty === 'hard') return question(id, `A spinner has ${total} equal sections, ${favorable} of them green. What is the probability of not landing on green?`, `${total - favorable}/${total}`, [`${favorable}/${total}`, `${total}/${favorable}`, `${total - favorable}/${favorable}`], 'Count the outcomes that are not green, then divide by the total number of sections.');
     return question(id, `A spinner has ${total} equal sections, ${favorable} of them green. What is P(green)?`, `${favorable}/${total}`, [`${total}/${favorable}`, `${favorable + 1}/${total}`, `${total - favorable}/${total}`], 'Probability is the number of favorable outcomes divided by the total number of equally likely outcomes.');
   }
   if (skill === 3) {
@@ -142,7 +195,7 @@ function mathQuestion(module: Module, index: number): Question {
 
 function languageQuestion(module: Module, context: number, skill: number): Question {
   const id = `${module.id}-generated-${context * 5 + skill + 1}`;
-  const name = names[context];
+  const name = names[context % names.length];
   const period = module.id.slice(0, 3);
 
   if (period === 'mp1') {
@@ -169,18 +222,18 @@ function languageQuestion(module: Module, context: number, skill: number): Quest
     if (skill === 0) return question(id, `A poem describes ${image}. What does this image most likely suggest?`, meaning, ['The scene has no sound or movement', 'The speaker is giving a scientific measurement', 'The image must be interpreted literally in every detail'], 'Figurative language creates an image that helps readers infer an idea or feeling.');
     if (skill === 1) {
       const refrains = ['still we try', 'one more step', 'hold the light', 'listen again', 'we begin', 'keep the promise', 'wait for morning', 'carry the song', 'look ahead', 'build it together', 'return to the page', 'make room for hope'];
-      return question(id, `A poet repeats “${refrains[context]}” after each stanza. What is the most likely effect?`, 'It emphasizes an idea and creates a refrain', ['It proves the poem is a play', 'It changes the setting to a different country', 'It removes the poem’s central idea'], 'Repetition draws attention to an idea and can create rhythm or emphasis.');
+      return question(id, `A poet repeats “${refrains[context % refrains.length]}” after each stanza. What is the most likely effect?`, 'It emphasizes an idea and creates a refrain', ['It proves the poem is a play', 'It changes the setting to a different country', 'It removes the poem’s central idea'], 'Repetition draws attention to an idea and can create rhythm or emphasis.');
     }
     if (skill === 2) {
       const directions = ['Mina steps back and lowers her voice', 'Jules pauses at the doorway', 'Ari turns toward the window', 'Nora folds the letter carefully', 'The lights fade as Eli exits', 'Sam speaks quickly, then stops', 'Riley points toward the map', 'Kai sits before answering', 'Leah crosses the room slowly', 'Omar closes the book', 'Ivy smiles at the audience', 'Theo waits before opening the door'];
-      return question(id, `A stage direction reads “(${directions[context]}).” What does it tell the performer?`, 'How to move or deliver a line during the scene', ['The poem’s rhyme scheme', 'The author’s research sources', 'The exact theme of the whole play'], 'Stage directions guide movement, expression, and delivery.');
+      return question(id, `A stage direction reads “(${directions[context % directions.length]}).” What does it tell the performer?`, 'How to move or deliver a line during the scene', ['The poem’s rhyme scheme', 'The author’s research sources', 'The exact theme of the whole play'], 'Stage directions guide movement, expression, and delivery.');
     }
     if (skill === 3) {
       const evidence = ['a green shoot appears after a storm', 'a friend returns to help at dawn', 'the speaker saves a seat for someone new', 'a small lamp remains lit through the night', 'a character shares the last slice of bread', 'the team repairs a bridge together', 'a student tries the difficult passage again', 'neighbors plant trees along the road', 'a note thanks someone for listening', 'the final image is an open gate', 'the speaker asks a new question', 'a character offers to begin again'];
-        return question(id, `In a poem where ${evidence[context]}, which detail best supports a hopeful tone?`, `The text includes ${evidence[context]}`, ['The poem has four pages', 'The title is printed in bold type', 'A character enters in the final scene'], 'Interpretations should be supported by meaningful details from the text.');
+        return question(id, `In a poem where ${evidence[context % evidence.length]}, which detail best supports a hopeful tone?`, `The text includes ${evidence[context % evidence.length]}`, ['The poem has four pages', 'The title is printed in bold type', 'A character enters in the final scene'], 'Interpretations should be supported by meaningful details from the text.');
     }
     const forms = ['a poem and a scene about courage', 'a play and a poem about belonging', 'two texts about overcoming a setback', 'a poem and a scene about responsibility', 'two works about a difficult choice', 'a drama and poem about friendship', 'texts about a community working together', 'two works about learning from mistakes', 'a poem and scene about change', 'texts about protecting a place', 'a poem and a play about memory', 'two works about keeping a promise'];
-    return question(id, `When comparing ${forms[context]}, what should a reader examine?`, 'How each form uses its own elements to develop the theme', ['Only the length of each text', 'Whether both works use identical sentences', 'The order of the authors’ names'], 'Poems and plays can develop similar themes through different structures and techniques.');
+    return question(id, `When comparing ${forms[context % forms.length]}, what should a reader examine?`, 'How each form uses its own elements to develop the theme', ['Only the length of each text', 'Whether both works use identical sentences', 'The order of the authors’ names'], 'Poems and plays can develop similar themes through different structures and techniques.');
   }
 
   if (period === 'mp3') {
@@ -301,10 +354,10 @@ function socialStudiesQuestion(module: Module, context: number, skill: number): 
   return question(id, `What should a timeline about ${event} show?`, 'Events in chronological order with relevant context', ['Only opinions about the events', 'Dates with no labels', 'Unrelated events placed randomly'], 'A useful timeline orders relevant events and includes enough context to interpret them.');
 }
 
-function generatedQuestion(module: Module, index: number): Question {
+function generatedQuestion(module: Module, index: number, difficulty: TopicDifficulty = 'easy'): Question {
   const context = Math.floor(index / 5);
   const skill = index % 5;
-  if (module.domain === 'Math') return mathQuestion(module, index);
+  if (module.domain === 'Math') return mathQuestion(module, index, difficulty);
   if (module.domain === 'ELA') return languageQuestion(module, context, skill);
   if (module.domain === 'Science') return scienceQuestion(module, context, skill);
   return socialStudiesQuestion(module, context, skill);
@@ -322,4 +375,34 @@ export function buildActivityQuestionSet(moduleId: string, count = ACTIVITY_QUES
 export function getActivityQuestionCount(moduleId: string): number {
   const courseModule = getAllModules().find((item) => item.id === moduleId);
   return courseModule ? Math.max(ACTIVITY_QUESTION_COUNT, courseModule.questions.length) : 0;
+}
+
+export function buildTopicQuestionSet(moduleId: string, skillIndices: number[], difficulty: TopicDifficulty, count = 30): Question[] {
+  const courseModule = getAllModules().find((item) => item.id === moduleId);
+  if (!courseModule || !skillIndices.length || count <= 0) return [];
+
+  const contextsPerSkill = Math.ceil(count / skillIndices.length);
+  const difficultyIndex = { easy: 0, medium: 1, hard: 2 }[difficulty];
+  const contextStart = difficultyIndex * contextsPerSkill;
+  const entries: Array<{ question: Question; skillIndex: number }> = [];
+  for (let context = contextStart; entries.length < count; context += 1) {
+    for (const skill of skillIndices) {
+      if (entries.length === count) break;
+      entries.push({ question: generatedQuestion(courseModule, context * 5 + skill, difficulty), skillIndex: skill });
+    }
+  }
+
+  return shuffled(entries.map((entry) => {
+    if (difficulty === 'easy') return entry.question;
+    const peerAnswers = [...new Set(entries
+      .filter((candidate) => candidate.skillIndex === entry.skillIndex && candidate.question.answer !== entry.question.answer)
+      .map((candidate) => candidate.question.answer))];
+    const peerCount = difficulty === 'hard' ? 3 : 1;
+    const peerDistractors = shuffled(peerAnswers).slice(0, peerCount);
+    const originalDistractors = entry.question.choices.filter((choice) => choice !== entry.question.answer);
+    const distractors = difficulty === 'hard'
+      ? [...peerDistractors, ...originalDistractors]
+      : [...originalDistractors.slice(0, 2), ...peerDistractors];
+    return question(entry.question.id, entry.question.prompt, entry.question.answer, distractors, entry.question.explanation);
+  }));
 }

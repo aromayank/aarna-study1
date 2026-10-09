@@ -8,6 +8,7 @@ This project is a responsive seventh-grade study website for a Jonas Salk Middle
 - Shared curriculum logic that can be reused in a future native iPhone app wrapper.
 - Four marking-period views across ELA, Math, Science, and Social Studies.
 - Randomized 60-question activity banks per module for practice, assignments, assessments, and quizzes.
+- Three focused topic strands per subject and marking period, each with Easy, Medium, and Hard practice and quiz sets of 30 questions per level.
 - Marking-period spelling lists at easy, medium, and hard levels, with listen-and-spell rounds.
 - Curriculum-aligned ELA, Math, and Social Studies vocabulary for each marking period, with revealable definitions.
 - A parent progress view with activity totals, scores, assignment submissions, and recent results.

@@ -2,20 +2,22 @@
 
 import { useEffect, useState } from 'react';
 import Image from 'next/image';
-import { ArrowRight, ArrowUpRight, BadgeCheck, BookOpenText, ChartNoAxesColumnIncreasing, CircleHelp, ClipboardList, House, Menu, Sparkles, SpellCheck, Volume2, X } from 'lucide-react';
+import { ArrowRight, ArrowUpRight, BadgeCheck, BookOpenText, ChartNoAxesColumnIncreasing, CircleHelp, ClipboardList, House, Menu, PanelsTopLeft, Sparkles, SpellCheck, Volume2, X } from 'lucide-react';
 import { curriculum, type Module, type Question } from '@/lib/curriculum';
-import { ACTIVITY_QUESTION_COUNT, buildActivityQuestionSet, getActivityQuestionCount } from '@/lib/questionBank';
+import { ACTIVITY_QUESTION_COUNT, buildActivityQuestionSet, buildTopicQuestionSet, getActivityQuestionCount } from '@/lib/questionBank';
 import { speakSpellingWord } from '@/lib/speech';
 import { getSpellingWords, shuffleSpellingWords, spellingLevels, type SpellingLevel, type SpellingWord } from '@/lib/spelling';
+import { getTopicsForModule, TOPIC_QUESTION_COUNT, topicDifficulties, topicDifficultyNotes, type CurriculumTopic, type TopicDifficulty } from '@/lib/topics';
 import { getVocabularyTerms, vocabularySubjects } from '@/lib/vocabulary';
 
 type ActivityMode = 'practice' | 'assignment' | 'assessment' | 'quiz';
-type DashboardView = 'overview' | 'spelling' | 'vocabulary' | 'parent';
+type DashboardView = 'overview' | 'topics' | 'spelling' | 'vocabulary' | 'parent';
 type Progress = Record<string, { attempts: number; best: number; last: number; totalScore?: number }>;
 type ActivityRecord = { id: string; moduleId: string; moduleTitle: string; subject: string; mode: ActivityMode | 'spelling'; score: number; correct: number; total: number; completedAt: string; detail?: string };
-type StudySession = { module: Module; mode: ActivityMode; questions: Question[]; index: number; correct: number; choice: string | null; checked: boolean; finished?: boolean; finalScore?: number };
+type StudySession = { module: Module; mode: ActivityMode; questions: Question[]; index: number; correct: number; choice: string | null; checked: boolean; topicId?: string; topicTitle?: string; courseTitle?: string; difficulty?: TopicDifficulty; finished?: boolean; finalScore?: number };
 
 const subjects = ['All subjects', 'ELA', 'Math', 'Science', 'Social Studies'];
+const topicSubjects = ['ELA', 'Math', 'Science', 'Social Studies'];
 const curriculumGuides = [
   { label: 'ELA · Grade 7', subject: 'ELA', url: './curriculum/ELA_-_Grade_7.pdf' },
   { label: 'ELA · Honors', subject: 'ELA', url: './curriculum/ELA_Honors_-_Grade_7.pdf' },
@@ -57,6 +59,8 @@ function getPeriodLabel(periodId: string) {
 export default function StudyDashboard() {
   const [periodId, setPeriodId] = useState(curriculum[0].id);
   const [subject, setSubject] = useState('All subjects');
+  const [topicSubject, setTopicSubject] = useState('ELA');
+  const [selectedTopicDifficulties, setSelectedTopicDifficulties] = useState<Record<string, TopicDifficulty>>({});
   const [view, setView] = useState<DashboardView>('overview');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [progress, setProgress] = useState<Progress>({});
@@ -98,6 +102,8 @@ export default function StudyDashboard() {
 
   const period = curriculum.find((item) => item.id === periodId) ?? curriculum[0];
   const modules = period.modules.filter((module) => subject === 'All subjects' || module.domain === subject || (subject === 'ELA' && module.domain.includes('ELA')));
+  const topicModule = period.modules.find((module) => module.domain === topicSubject);
+  const periodTopics = topicModule ? getTopicsForModule(topicModule.id) : [];
   const totalAttempts = activityRecords.length || Object.values(progress).reduce((sum, item) => sum + item.attempts, 0);
   const average = activityRecords.length
     ? Math.round(activityRecords.reduce((sum, record) => sum + record.score, 0) / activityRecords.length)
@@ -118,15 +124,22 @@ export default function StudyDashboard() {
     if (questions.length) setSession({ module, mode, questions, index: 0, correct: 0, choice: null, checked: false });
   }
 
+  function startTopicActivity(module: Module, topic: CurriculumTopic, mode: 'practice' | 'quiz', difficulty: TopicDifficulty) {
+    const questions = buildTopicQuestionSet(module.id, topic.skillIndices, difficulty, TOPIC_QUESTION_COUNT);
+    const difficultyLabel = `${difficulty[0].toUpperCase()}${difficulty.slice(1)}`;
+    if (questions.length) setSession({ module: { ...module, title: `${topic.title} · ${difficultyLabel}` }, mode, questions, index: 0, correct: 0, choice: null, checked: false, topicId: topic.id, topicTitle: topic.title, courseTitle: module.title, difficulty });
+  }
+
   function navigateToView(nextView: DashboardView) {
     setView(nextView);
     setIsMobileMenuOpen(false);
+    window.scrollTo(0, 0);
   }
 
   function finishActivity(correct: number, count: number) {
     if (!session) return;
     const score = Math.round((correct / count) * 100);
-    const key = `${session.module.id}:${session.mode}`;
+    const key = `${session.module.id}:${session.topicId ? `topic-${session.topicId}-${session.difficulty ?? 'easy'}:` : ''}${session.mode}`;
     const next = { ...progress, [key]: {
       attempts: (progress[key]?.attempts ?? 0) + 1,
       best: Math.max(progress[key]?.best ?? 0, score),
@@ -136,15 +149,16 @@ export default function StudyDashboard() {
     setProgress(next);
     window.localStorage.setItem('aarna-study-progress', JSON.stringify(next));
     const record: ActivityRecord = {
-      id: `${session.module.id}-${session.mode}-${Date.now()}`,
+      id: `${session.module.id}-${session.topicId ?? session.mode}-${session.difficulty ?? ''}-${Date.now()}`,
       moduleId: session.module.id,
-      moduleTitle: session.module.title,
+      moduleTitle: session.courseTitle ?? session.module.title,
       subject: session.module.domain,
       mode: session.mode,
       score,
       correct,
       total: count,
-      completedAt: new Date().toISOString()
+      completedAt: new Date().toISOString(),
+      detail: session.topicTitle ? `${session.topicTitle} · ${session.difficulty?.toUpperCase() ?? 'EASY'}` : undefined
     };
     const nextRecords = [record, ...activityRecords];
     setActivityRecords(nextRecords);
@@ -216,6 +230,7 @@ export default function StudyDashboard() {
         <div className="school-label">JONAS SALK MIDDLE SCHOOL</div>
         <nav className="side-nav" id="study-main-navigation" aria-label="Main navigation">
           <button className={view === 'overview' ? 'nav-link active' : 'nav-link'} onClick={() => navigateToView('overview')}><House className="nav-icon" size={17} strokeWidth={1.8} />My learning</button>
+          <button className={view === 'topics' ? 'nav-link active' : 'nav-link'} onClick={() => navigateToView('topics')}><PanelsTopLeft className="nav-icon" size={17} strokeWidth={1.8} />Study by topic</button>
           <button className={view === 'spelling' ? 'nav-link active' : 'nav-link'} onClick={() => { navigateToView('spelling'); startSpellingRound('easy'); }}><SpellCheck className="nav-icon" size={17} strokeWidth={1.8} />Spelling bee</button>
           <button className={view === 'vocabulary' ? 'nav-link active' : 'nav-link'} onClick={() => { navigateToView('vocabulary'); setRevealedVocabulary({}); }}><BookOpenText className="nav-icon" size={17} strokeWidth={1.8} />Vocabulary</button>
           <button className={view === 'parent' ? 'nav-link active' : 'nav-link'} onClick={() => navigateToView('parent')}><ChartNoAxesColumnIncreasing className="nav-icon" size={17} strokeWidth={1.8} />Progress report</button>
@@ -229,11 +244,36 @@ export default function StudyDashboard() {
           <div className="topbar-leading">
             <button className="mobile-menu-button" type="button" aria-label="Open main menu" aria-controls="study-main-navigation" aria-expanded={isMobileMenuOpen} onClick={() => setIsMobileMenuOpen(true)}><Menu size={20} /></button>
             <a className="mobile-brand" href="#home" onClick={() => navigateToView('overview')}><Image src="/aarna-muse.svg" alt="" width={38} height={38} priority /><span>Aarna <strong>Study</strong></span></a>
-            <span className="desktop-breadcrumb">Aarna <span className="crumb">/ {view === 'spelling' ? 'Spelling bee' : view === 'vocabulary' ? 'Vocabulary' : view === 'parent' ? 'Progress report' : 'My learning'}</span></span>
+            <span className="desktop-breadcrumb">Aarna <span className="crumb">/ {view === 'topics' ? 'Study by topic' : view === 'spelling' ? 'Spelling bee' : view === 'vocabulary' ? 'Vocabulary' : view === 'parent' ? 'Progress report' : 'My learning'}</span></span>
           </div>
           <span className="today-label">A little practice goes a long way</span>
         </header>
         <div className="content-wrap">
+          {view === 'topics' && <section className="topics-view" aria-labelledby="topics-title">
+            <div className="topics-intro"><div><p className="eyebrow">SMALL SKILLS, STEADY PROGRESS</p><h1 id="topics-title">Study by topic</h1><p className="welcome-copy">Choose a subject, marking period, and challenge level to build confidence one skill at a time.</p></div><div className="topic-count"><strong>{TOPIC_QUESTION_COUNT}</strong><span>questions per level</span></div></div>
+            <div className="topic-subject-tabs" role="tablist" aria-label="Subject">
+              {topicSubjects.map((name) => <button key={name} role="tab" aria-selected={topicSubject === name} className={topicSubject === name ? 'topic-subject-tab selected' : 'topic-subject-tab'} onClick={() => setTopicSubject(name)}>{name}</button>)}
+            </div>
+            <div className="period-tabs" role="tablist" aria-label="Marking period">{curriculum.map((item, index) => <button key={item.id} role="tab" aria-selected={periodId === item.id} className={periodId === item.id ? 'period-tab selected' : 'period-tab'} onClick={() => setPeriodId(item.id)}><span>MP {index + 1}</span><small>{['Sep – Nov', 'Nov – Jan', 'Jan – Mar', 'Mar – Jun'][index]}</small></button>)}</div>
+            <div className="topic-period-intro"><span className="period-dot"/><div><strong>{period.name} · {topicSubject}</strong><p>{topicModule?.title ?? 'Topic activities are not available for this unit yet.'}</p></div></div>
+            {periodTopics.length ? <div className="topic-grid" role="tabpanel" aria-label={`${period.name} ${topicSubject} topics`}>
+              {periodTopics.map((topic, index) => {
+                const difficultyKey = `${periodId}:${topic.id}`;
+                const selectedDifficulty = selectedTopicDifficulties[difficultyKey] ?? 'easy';
+                return <article className={`topic-card topic-card-${index + 1}`} key={topic.id}>
+                  <div className="topic-card-top"><span>TOPIC 0{index + 1}</span><span>{TOPIC_QUESTION_COUNT} QUESTIONS</span></div>
+                  <h2>{topic.title}</h2><p>{topic.description}</p>
+                  <div className="topic-level-tabs" role="tablist" aria-label={`${topic.title} difficulty`}>
+                    {topicDifficulties.map((difficulty) => <button key={difficulty} type="button" role="tab" aria-selected={selectedDifficulty === difficulty} data-difficulty={difficulty} className={selectedDifficulty === difficulty ? 'topic-level-tab selected' : 'topic-level-tab'} onClick={() => setSelectedTopicDifficulties((current) => ({ ...current, [difficultyKey]: difficulty }))}>{difficulty}</button>)}
+                  </div>
+                  <div className="topic-card-bottom"><span>{TOPIC_QUESTION_COUNT} questions</span><span>{topicDifficultyNotes[selectedDifficulty]}</span></div>
+                  <div className="topic-card-actions"><button className="primary-button" onClick={() => topicModule && startTopicActivity(topicModule, topic, 'practice', selectedDifficulty)}><BookOpenText size={14} />Practice</button><button className="activity-button" onClick={() => topicModule && startTopicActivity(topicModule, topic, 'quiz', selectedDifficulty)}><CircleHelp size={14} />Quiz</button></div>
+                </article>;
+              })}
+            </div> : <p className="empty-state">No topic activities are listed for this subject and marking period.</p>}
+            <p className="data-note">Topic sessions are included in the progress report under their learning module.</p>
+          </section>}
+
           {view === 'vocabulary' && <section className="vocabulary-view">
             <p className="eyebrow">WORDS FROM YOUR STUDY PLAN</p>
             <h1>Curriculum vocabulary</h1>
